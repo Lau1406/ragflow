@@ -65,7 +65,8 @@ def filename_type(filename):
         return FileType.PDF.value
 
     if re.match(
-        r".*\.(msg|eml|doc|docx|ppt|pptx|yml|xml|htm|json|jsonl|ldjson|csv|txt|ini|xls|xlsx|wps|rtf|hlp|pages|numbers|key|md|mdx|py|js|java|c|cpp|h|php|go|ts|sh|cs|kt|html|sql|epub)$", filename
+        r".*\.(msg|eml|doc|docx|ppt|pptx|yml|xml|htm|json|jsonl|ldjson|csv|txt|ini|xls|xlsx|wps|rtf|hlp|pages|numbers|key|md|mdx|adoc|asciidoc|py|js|java|c|cpp|h|php|go|ts|sh|cs|kt|html|sql|epub)$",
+        filename,
     ):
         return FileType.DOC.value
 

@@ -84,6 +84,10 @@ class ParserParam(ProcessParamBase):
                 "text",
                 "json",
             ],
+            "text&asciidoc": [
+                "text",
+                "json",
+            ],
             "code": [
                 "text",
                 "json",
@@ -131,6 +135,11 @@ class ParserParam(ProcessParamBase):
             },
             "text&markdown": {
                 "suffix": ["md", "markdown", "mdx", "txt"],
+                "remove_toc": False,
+                "output_format": "json",
+            },
+            "text&asciidoc": {
+                "suffix": ["adoc", "asciidoc"],
                 "remove_toc": False,
                 "output_format": "json",
             },
@@ -255,6 +264,11 @@ class ParserParam(ProcessParamBase):
         if text_config:
             text_output_format = text_config.get("output_format", "")
             self.check_valid_value(text_output_format, "Text output format abnormal.", self.allowed_output_format["text&markdown"])
+
+        asciidoc_config = self.setups.get("text&asciidoc", "")
+        if asciidoc_config:
+            asciidoc_output_format = asciidoc_config.get("output_format", "")
+            self.check_valid_value(asciidoc_output_format, "AsciiDoc output format abnormal.", self.allowed_output_format["text&asciidoc"])
 
         code_config = self.setups.get("code", "")
         if code_config:
@@ -566,6 +580,7 @@ class Parser(ProcessBase):
 
         # Mark likely author blocks near the title when enabled.
         if author_enabled:
+
             def _begin(txt):
                 if not isinstance(txt, str):
                     return False
@@ -784,7 +799,7 @@ class Parser(ProcessBase):
             markdown_text = docx_parser.to_markdown(name, binary=blob)
             if conf.get("remove_toc"):
                 markdown_text = "\n".join(remove_toc_word(markdown_text.split("\n"), outlines))
-                 
+
             self.set_output("markdown", markdown_text)
 
     def _slides(self, name, blob, **kwargs):
@@ -890,6 +905,54 @@ class Parser(ProcessBase):
                     images.append(section_images[idx])
                 if images:
                     # If multiple images found, combine them using concat_img
+                    combined_image = reduce(concat_img, images) if len(images) > 1 else images[0]
+                    json_result["image"] = combined_image
+                json_result["doc_type_kwd"] = "image" if json_result.get("image") is not None else "text"
+                json_results.append(json_result)
+
+            if conf.get("vlm"):
+                enhance_media_sections_with_vision(
+                    json_results,
+                    self._canvas._tenant_id,
+                    conf["vlm"],
+                    callback=self.callback,
+                )
+            self.set_output("json", json_results)
+        else:
+            self.set_output("text", "\n".join([section_text for section_text, _ in sections]))
+
+    def _asciidoc(self, name, blob, **kwargs):
+        """Parse asciidoc files into text/json sections."""
+        from functools import reduce
+
+        from rag.app.naive import Asciidoc as naive_asciidoc_parser
+        from rag.nlp import concat_img
+
+        self.callback(random.randint(1, 5) / 100.0, "Start to work on an asciidoc.")
+        conf = self._param.setups["text&asciidoc"]
+        self.set_output("output_format", conf["output_format"])
+
+        asciidoc_parser = naive_asciidoc_parser()
+        sections, tables, section_images = asciidoc_parser(
+            name,
+            blob,
+            separate_tables=False,
+            delimiter=conf.get("delimiter"),
+            return_section_images=True,
+        )
+
+        if conf.get("output_format") == "json":
+            json_results = []
+
+            for idx, (section_text, _) in enumerate(sections):
+                json_result = {
+                    "text": section_text,
+                }
+
+                images = []
+                if section_images and len(section_images) > idx and section_images[idx] is not None:
+                    images.append(section_images[idx])
+                if images:
                     combined_image = reduce(concat_img, images) if len(images) > 1 else images[0]
                     json_result["image"] = combined_image
                 json_result["doc_type_kwd"] = "image" if json_result.get("image") is not None else "text"
@@ -1170,6 +1233,7 @@ class Parser(ProcessBase):
         function_map = {
             "pdf": self._pdf,
             "text&markdown": self._markdown,
+            "text&asciidoc": self._asciidoc,
             "code": self._code,
             "html": self._html,
             "spreadsheet": self._spreadsheet,

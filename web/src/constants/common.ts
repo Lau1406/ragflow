@@ -20,6 +20,8 @@ export const fileIconMap = {
   json: 'json.svg',
   md: 'md.svg',
   mdx: 'mdx.svg',
+  adoc: 'md.svg',
+  asciidoc: 'md.svg',
   mkv: 'mkv.svg',
   mp3: 'mp3.svg',
   mp4: 'mp4.svg',
@@ -166,6 +168,7 @@ export enum FileMimeType {
   Json = 'application/json',
   Md = 'text/markdown',
   Mdx = 'text/markdown',
+  Adoc = 'text/asciidoc',
 }
 
 export const Domain = 'cloud.ragflow.io';
@@ -192,6 +195,7 @@ export const ExceptiveType = [
   'docx',
   'md',
   'mdx',
+  'adoc',
   ...Images,
 ];
 

@@ -14,6 +14,8 @@
 #  limitations under the License.
 #
 
+from .asciidoc_parser import AsciidocElementExtractor
+from .asciidoc_parser import RAGFlowAsciidocParser as AsciidocParser
 from .docx_parser import RAGFlowDocxParser as DocxParser
 from .epub_parser import RAGFlowEpubParser as EpubParser
 from .excel_parser import RAGFlowExcelParser as ExcelParser
@@ -38,4 +40,6 @@ __all__ = [
     "MarkdownParser",
     "TxtParser",
     "MarkdownElementExtractor",
+    "AsciidocParser",
+    "AsciidocElementExtractor",
 ]

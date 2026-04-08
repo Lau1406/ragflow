@@ -10,6 +10,7 @@ export enum FileType {
   Image = 'image',
   Email = 'email',
   TextMarkdown = 'text&markdown',
+  TextAsciidoc = 'text&asciidoc',
   Code = 'code',
   Html = 'html',
   Docx = 'word',
@@ -41,6 +42,10 @@ export enum TextMarkdownOutputFormat {
   Text = 'text',
 }
 
+export enum TextAsciidocOutputFormat {
+  Text = 'text',
+}
+
 export enum DocxOutputFormat {
   Markdown = 'markdown',
   Json = 'json',
@@ -64,6 +69,7 @@ export const OutputFormatMap = {
   [FileType.Image]: ImageOutputFormat,
   [FileType.Email]: EmailOutputFormat,
   [FileType.TextMarkdown]: TextMarkdownOutputFormat,
+  [FileType.TextAsciidoc]: TextAsciidocOutputFormat,
   [FileType.Code]: TextMarkdownOutputFormat,
   [FileType.Html]: TextMarkdownOutputFormat,
   [FileType.Docx]: DocxOutputFormat,
@@ -78,6 +84,7 @@ export const InitialOutputFormatMap = {
   [FileType.Image]: ImageOutputFormat.Text,
   [FileType.Email]: EmailOutputFormat.Text,
   [FileType.TextMarkdown]: TextMarkdownOutputFormat.Text,
+  [FileType.TextAsciidoc]: TextAsciidocOutputFormat.Text,
   [FileType.Code]: TextMarkdownOutputFormat.Text,
   [FileType.Html]: TextMarkdownOutputFormat.Text,
   [FileType.Docx]: DocxOutputFormat.Json,
@@ -341,6 +348,7 @@ export const FileTypeSuffixMap = {
   [FileType.Image]: ['jpg', 'jpeg', 'png', 'gif'],
   [FileType.Email]: ['eml', 'msg'],
   [FileType.TextMarkdown]: ['md', 'markdown', 'mdx', 'txt'],
+  [FileType.TextAsciidoc]: ['adoc', 'asciidoc'],
   [FileType.Code]: [
     'py',
     'js',

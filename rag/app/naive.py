@@ -33,7 +33,7 @@ from common.constants import LLMType
 from api.db.services.llm_service import LLMBundle
 from api.db.joint_services.tenant_model_service import get_model_config_by_type_and_name, get_tenant_default_model_by_type
 from rag.utils.file_utils import extract_embed_file, extract_links_from_pdf, extract_links_from_docx, extract_html
-from deepdoc.parser import DocxParser, EpubParser, ExcelParser, HtmlParser, JsonParser, MarkdownElementExtractor, MarkdownParser, PdfParser, TxtParser
+from deepdoc.parser import AsciidocElementExtractor, AsciidocParser, DocxParser, EpubParser, ExcelParser, HtmlParser, JsonParser, MarkdownElementExtractor, MarkdownParser, PdfParser, TxtParser
 from deepdoc.parser.figure_parser import VisionFigureParser, vision_figure_parser_docx_wrapper_naive, vision_figure_parser_pdf_wrapper
 from deepdoc.parser.pdf_parser import PlainParser, VisionParser
 from deepdoc.parser.docling_parser import DoclingParser
@@ -705,6 +705,99 @@ class Markdown(MarkdownParser):
         tbls = []
         for table in tables:
             tbls.append(((None, markdown(table, extensions=["markdown.extensions.tables"])), ""))
+        if return_section_images:
+            return sections, tbls, section_images
+        return sections, tbls
+
+
+class Asciidoc(AsciidocParser):
+    def extract_image_urls_with_lines(self, text):
+        # AsciiDoc block image: image::path[alt]
+        # AsciiDoc inline image: image:path[alt]
+        block_img_re = re.compile(r"image::([^\[\s]+)\[")
+        inline_img_re = re.compile(r"(?<!:)image:([^\[\s]+)\[")
+        html_img_re = re.compile(r'src=["\']([^"\'>\s]+)', re.IGNORECASE)
+        urls = []
+        seen = set()
+        lines = text.splitlines()
+        for idx, line in enumerate(lines):
+            for url in block_img_re.findall(line):
+                if (url, idx) not in seen:
+                    urls.append({"url": url, "line": idx})
+                    seen.add((url, idx))
+            for url in inline_img_re.findall(line):
+                if (url, idx) not in seen:
+                    urls.append({"url": url, "line": idx})
+                    seen.add((url, idx))
+            for url in html_img_re.findall(line):
+                if (url, idx) not in seen:
+                    urls.append({"url": url, "line": idx})
+                    seen.add((url, idx))
+        return urls
+
+    def load_images_from_urls(self, urls, cache=None):
+        import requests
+        from pathlib import Path
+
+        cache = cache or {}
+        images = []
+        for url in urls:
+            if url in cache:
+                if cache[url]:
+                    images.append(cache[url])
+                continue
+            img_obj = None
+            try:
+                if url.startswith(("http://", "https://")):
+                    response = requests.get(url, stream=True, timeout=30)
+                    if response.status_code == 200 and response.headers.get("Content-Type", "").startswith("image/"):
+                        img_obj = Image.open(BytesIO(response.content)).convert("RGB")
+                else:
+                    local_path = Path(url)
+                    if local_path.exists():
+                        img_obj = Image.open(url).convert("RGB")
+                    else:
+                        logging.warning(f"Local image file not found: {url}")
+            except Exception as e:
+                logging.error(f"Failed to download/open image from {url}: {e}")
+            cache[url] = img_obj
+            if img_obj:
+                images.append(img_obj)
+        return images, cache
+
+    def __call__(self, filename, binary=None, separate_tables=True, delimiter=None, return_section_images=False):
+        if binary:
+            encoding = find_codec(binary)
+            txt = binary.decode(encoding, errors="ignore")
+        else:
+            with open(filename, "r") as f:
+                txt = f.read()
+
+        remainder, tables = self.extract_tables_and_remainder(f"{txt}\n", separate_tables=separate_tables)
+        extractor = AsciidocElementExtractor(txt)
+        image_refs = self.extract_image_urls_with_lines(txt)
+        element_sections = extractor.extract_elements(delimiter, include_meta=True)
+
+        sections = []
+        section_images = []
+        image_cache = {}
+        for element in element_sections:
+            content = element["content"]
+            start_line = element["start_line"]
+            end_line = element["end_line"]
+            urls_in_section = [ref["url"] for ref in image_refs if start_line <= ref["line"] <= end_line]
+            imgs = []
+            if urls_in_section:
+                imgs, image_cache = self.load_images_from_urls(urls_in_section, image_cache)
+            combined_image = None
+            if imgs:
+                combined_image = reduce(concat_img, imgs) if len(imgs) > 1 else imgs[0]
+            sections.append((content, ""))
+            section_images.append(combined_image)
+
+        tbls = []
+        for table in tables:
+            tbls.append(((None, self._table_to_html(table)), ""))
         if return_section_images:
             return sections, tbls, section_images
         return sections, tbls

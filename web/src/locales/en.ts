@@ -2248,6 +2248,7 @@ This process aggregates variables from multiple branches into a single variable 
         image: 'Image',
         email: 'Email',
         'text&markdown': 'Text & Markup',
+        'text&asciidoc': 'Text & AsciiDoc',
         code: 'Code',
         html: 'HTML',
         word: 'Word',
