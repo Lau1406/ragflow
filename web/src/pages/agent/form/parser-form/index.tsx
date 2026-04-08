@@ -77,6 +77,10 @@ const PreprocessOptionConfigsMap: Partial<
     { value: MAIN_CONTENT_PREPROCESS_VALUE, required: true },
     { value: PreprocessValue.section_title },
   ],
+  [FileType.TextAsciidoc]: [
+    { value: MAIN_CONTENT_PREPROCESS_VALUE, required: true },
+    { value: PreprocessValue.section_title },
+  ],
   [FileType.Code]: [{ value: MAIN_CONTENT_PREPROCESS_VALUE, required: true }],
   [FileType.Html]: [
     { value: MAIN_CONTENT_PREPROCESS_VALUE, required: true },
@@ -132,6 +136,7 @@ const FileFormatWidgetMap = {
   [FileType.Email]: EmailFormFields,
   [FileType.Image]: ImageFormFields,
   [FileType.TextMarkdown]: TextMarkdownFormFields,
+  [FileType.TextAsciidoc]: TextMarkdownFormFields,
   [FileType.Html]: HtmlFormFields,
 };
 

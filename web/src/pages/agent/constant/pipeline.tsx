@@ -222,6 +222,11 @@ export const initialParserValues = {
       preprocess: PreprocessValue.main_content,
     },
     {
+      fileFormat: FileType.TextAsciidoc,
+      output_format: TextAsciidocOutputFormat.Text,
+      preprocess: PreprocessValue.main_content,
+    },
+    {
       fileFormat: FileType.Code,
       output_format: TextMarkdownOutputFormat.Text,
       preprocess: PreprocessValue.main_content,

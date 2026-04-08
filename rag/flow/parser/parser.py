@@ -301,6 +301,18 @@ class ParserParam(ProcessParamBase):
     def get_input_form(self) -> dict[str, dict]:
         return {}
 
+    def update(self, conf, allow_redundant=False):
+        # Capture defaults before super().update() overwrites setups wholesale.
+        _default_setups = {k: v for k, v in self.setups.items()}
+        super().update(conf, allow_redundant)
+        # Merge: any file-type entry present in the defaults but absent in the
+        # stored config (e.g. newly-added types on an old node) gets the default
+        # value filled in so adoc/etc. work without requiring node recreation.
+        for key, value in _default_setups.items():
+            if key not in self.setups:
+                self.setups[key] = value
+        return self
+
 
 class Parser(ProcessBase):
     component_name = "Parser"
